@@ -79,6 +79,8 @@ sub S_botcmd_firstgif {
             ],
             connect_timeout => 1.0,
             read_timeout    => 3.0,
+            parse_chunked   => 1,
+            socket_cache    => undef,
         });
 
         if ( exists $response->{error} ){
@@ -91,6 +93,8 @@ sub S_botcmd_firstgif {
         }
 
         $response_body = $response->{body};
+
+        1;
     } or do {
         my $error = $@ || 'Zombie error (giphy.com Hijk request)';
         $error =~ s/[\r\n]+ \z//x;
@@ -135,7 +139,7 @@ sub S_botcmd_firstgif {
         );
     }
 
-    return PCI_EAT_NONE;
+    return PCI_EAT_ALL;
 }
 
 sub S_botcmd_randomgif {
@@ -163,6 +167,8 @@ sub S_botcmd_randomgif {
             ],
             connect_timeout => 1.0,
             read_timeout    => 3.0,
+            parse_chunked   => 1,
+            socket_cache    => undef,
         });
 
         if ( exists $response->{error} ){
@@ -173,8 +179,11 @@ sub S_botcmd_randomgif {
 
             return PCI_EAT_NONE;
         }
+        # use Data::Dumper; warn ' -- response: ' . Dumper( $response);
 
         $response_body = $response->{body};
+
+        1;
     } or do {
         my $error = $@ || 'Zombie error (giphy.com Hijk request)';
         $error =~ s/[\r\n]+ \z//x;
@@ -187,6 +196,7 @@ sub S_botcmd_randomgif {
         return PCI_EAT_NONE;
     };
 
+    # use Data::Dumper; warn Dumper( $response_body );
     my $api_response = JSON::from_json( $response_body );
 
     my $data = $api_response->{data};
@@ -199,7 +209,7 @@ sub S_botcmd_randomgif {
         return PCI_EAT_NONE;
     }
 
-    my @tags = @{ $data->{tags} };
+    my @tags = @{ $data->{tags} // [] };
     my $image_url = $data->{image_url};
 
     $irc->yield(
@@ -211,7 +221,7 @@ sub S_botcmd_randomgif {
         ),
     );
 
-    return PCI_EAT_NONE;
+    return PCI_EAT_ALL;
 }
 
 1;
